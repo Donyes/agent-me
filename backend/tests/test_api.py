@@ -34,6 +34,16 @@ async def test_health(client: httpx.AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("endpoint", ["/health", "/ready", "/api/v1/profile"])
+async def test_non_answer_endpoints_keep_their_existing_cache_policy(
+    client: httpx.AsyncClient, endpoint: str
+) -> None:
+    response = await client.get(endpoint)
+
+    assert "cache-control" not in response.headers
+
+
+@pytest.mark.anyio
 async def test_profile_exposes_public_runtime_configuration(client: httpx.AsyncClient) -> None:
     response = await client.get("/api/v1/profile")
 
@@ -111,6 +121,17 @@ async def test_grounded_extractive_answer(client: httpx.AsyncClient) -> None:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("endpoint", ["/api/v1/chat", "/api/v1/collaborate"])
+async def test_answer_endpoints_prevent_http_caching(
+    client: httpx.AsyncClient, endpoint: str
+) -> None:
+    response = await client.post(endpoint, json={"question": "preferred Python tools?"})
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.anyio
 async def test_multi_agent_collaboration_returns_typed_trace(
     client: httpx.AsyncClient,
 ) -> None:
@@ -150,6 +171,17 @@ async def test_multi_agent_request_is_strict_and_rejects_blank_questions(
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("endpoint", ["/api/v1/chat", "/api/v1/collaborate"])
+async def test_answer_validation_errors_prevent_http_caching(
+    client: httpx.AsyncClient, endpoint: str
+) -> None:
+    response = await client.post(endpoint, json={"question": "  "})
+
+    assert response.status_code == 422
+    assert response.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.anyio
 async def test_blank_and_unknown_fields_are_rejected(client: httpx.AsyncClient) -> None:
     blank = await client.post("/api/v1/chat", json={"question": "   "})
     extra = await client.post("/api/v1/chat", json={"question": "hello", "admin": True})
@@ -173,6 +205,7 @@ async def test_question_total_limit_has_a_stable_error_code(
     assert response.status_code == 413
     assert response.json()["code"] == "question_too_large"
     assert isinstance(response.json()["detail"], str)
+    assert response.headers["cache-control"] == "no-store"
 
 
 @pytest.mark.anyio
@@ -197,14 +230,15 @@ async def test_history_total_limit_is_enforced(client: httpx.AsyncClient) -> Non
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("endpoint", ["/api/v1/chat", "/api/v1/collaborate"])
 async def test_declared_oversized_request_body_is_rejected_before_parsing(
-    client: httpx.AsyncClient,
+    client: httpx.AsyncClient, endpoint: str
 ) -> None:
     settings = get_settings()
     original = settings.max_request_body_bytes
     settings.max_request_body_bytes = 1_024
     try:
-        response = await client.post("/api/v1/chat", json={"question": "x" * 2_048})
+        response = await client.post(endpoint, json={"question": "x" * 2_048})
     finally:
         settings.max_request_body_bytes = original
 
@@ -213,6 +247,7 @@ async def test_declared_oversized_request_body_is_rejected_before_parsing(
         "detail": "request body exceeds configured limit",
         "code": "request_body_too_large",
     }
+    assert response.headers["cache-control"] == "no-store"
 
 
 @pytest.mark.anyio
@@ -262,3 +297,5 @@ async def test_incomplete_provider_configuration_fails_explicitly(
         "detail": "Provider configuration is incomplete.",
         "code": "provider_configuration_incomplete",
     }
+    assert response.headers["cache-control"] == "no-store"
+

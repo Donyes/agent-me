@@ -91,6 +91,10 @@ can exhaust database connections, memory, provider quota, or cost budget.
 Store structured codes and safe metrics by default. Define retention, deletion, tenant access, and
 redaction before persisting prompts or excerpts.
 
+HTTP cache policy is separate from server-side retention. The chat and collaboration endpoints send
+`Cache-Control: no-store` so dynamic answers are not stored by browsers or intermediaries. This does
+not delete server logs, traces, or stored knowledge, which require their own retention controls.
+
 ## Read the implementation
 
 Revisit the boundaries you may extend:
@@ -293,3 +297,4 @@ LLMs” unless your implementation and tests demonstrate those exact properties.
 ---
 
 **Previous: [Lesson 06](../06-evaluation/README.md)** · **Return to [course home](../README.md)** · **Review the [rubric](../RUBRIC.md)**
+

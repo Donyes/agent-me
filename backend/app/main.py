@@ -7,6 +7,7 @@ from .config import Settings, get_settings
 from .knowledge import KnowledgeBase, KnowledgeLoadError
 from .provider import ProviderError, generate_answer
 from .request_limits import RequestBodyLimitMiddleware
+from .response_cache import NoStoreAnswerResponsesMiddleware
 from .schemas import (
     ChatRequest,
     ChatResponse,
@@ -27,6 +28,7 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+app.add_middleware(NoStoreAnswerResponsesMiddleware)
 
 
 _PROVIDER_ERROR_MESSAGES = {
@@ -186,3 +188,4 @@ async def collaborate(
             for stage in result.trace
         ],
     )
+

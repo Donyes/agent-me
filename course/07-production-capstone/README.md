@@ -324,4 +324,3 @@ LLMs” unless your implementation and tests demonstrate those exact properties.
 ---
 
 **Previous: [Lesson 06](../06-evaluation/README.md)** · **Return to [course home](../README.md)** · **Review the [rubric](../RUBRIC.md)**
-

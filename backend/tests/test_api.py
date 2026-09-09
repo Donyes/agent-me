@@ -539,4 +539,3 @@ async def test_request_id_header_is_exposed_to_allowed_browser_origins(
     exposed = response.headers.get("access-control-expose-headers", "")
     assert "X-Request-ID" in exposed
     assert response.headers["access-control-allow-origin"] == origin
-
